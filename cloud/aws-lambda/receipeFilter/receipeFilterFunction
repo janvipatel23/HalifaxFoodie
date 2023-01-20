@@ -1,0 +1,39 @@
+import boto3 
+import json
+import urllib
+from pprint import pprint
+import os
+
+def lambda_handler(event, context):
+    s3 = boto3.client("s3")
+    dynamodb = boto3.client('dynamodb')
+    bucket = event['Records'][0]['s3']['bucket']['name']
+    key = urllib.parse.unquote_plus(event['Records'][0]['s3']['object']['key'], encoding='utf-8')
+    
+    file = s3.get_object(Bucket=bucket, Key=key)
+    paragraph = str(file["Body"].read())
+    
+    #find KeyPhrases
+    comprehend = boto3.client("comprehend")
+    keyphrase = comprehend.detect_key_phrases(Text=paragraph, LanguageCode="en")
+    phrases=keyphrase['KeyPhrases']
+    print(phrases)
+    
+    #check purpose
+    result = json.dumps(phrases)
+    jsonObject = json.loads(result)
+    for key in jsonObject:
+        value = jsonObject[key]
+        print("The key and value are ({}) = ({})".format(key, value))
+
+    
+    ingredients=''
+    for search in phrases:
+        holdTemp=search['Text']
+        if holdTemp.isupper():
+            ingredients=ingredients+""
+            print(ingredients)
+            name=os.path.splitext(key)[0]
+            #store data in DynamoDB
+    dynamodb.put_item(TableName='RecipeTable', Item={'RecipeName':{'S':name},'Ingredients':{'S':ingredients}})
+

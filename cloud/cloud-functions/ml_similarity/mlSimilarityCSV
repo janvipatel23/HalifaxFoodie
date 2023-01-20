@@ -1,0 +1,40 @@
+const axios=require('axios')
+const { Storage } = require('@google-cloud/storage');
+const express = require('express');
+const cors = require('cors');
+console.log("Inside cloud function")
+const storage_client = new Storage();
+const app = express();
+app.use(express.json());
+const corsOpts = {
+    origin: '*',
+  
+    methods: [
+      'GET',
+      'POST',
+    ],
+  
+    allowedHeaders: [
+        'Content-Type', 'Authorization', 'Accept'
+    ],
+  };
+  
+app.use(cors(corsOpts))
+console.log("Inside cloud function and cors code passed")
+app.post("/", async (req, res) => {
+  console.log("Inside post funciton",req.body)
+  await storage_client.bucket("check_test_data").file("TestRecipe.csv").save(req.body.data);
+  console.log("Trying to send now")
+  await axios.get("https://us-central1-group11-369414.cloudfunctions.net/bigQueryLambdaFunction").then((response) => {
+  console.log("called another cloud function")})
+  res.send({
+        res:res.data,
+      status: 200,
+      message: "success"
+      
+    });console.log("succes")
+})
+
+
+module.exports = { app }
+//https://stackoverflow.com/questions/69399970/create-new-csv-file-in-google-cloud-storage-from-cloud-function

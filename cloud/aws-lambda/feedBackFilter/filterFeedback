@@ -1,0 +1,21 @@
+import json
+import boto3
+comprehend = boto3.client('comprehend')
+client = boto3.client('dynamodb')
+
+def lambda_handler(event, context):
+  data = client.get_item(
+    TableName='Feedback',
+    Key={
+        'Restaurant_Name': {
+          'S': 'Tawa'
+        }
+    }
+  )
+  print(data)
+  keyPhrase = comprehend.detect_key_phrases(Text=data["Item"]["Feedback"]["S"], LanguageCode='en')
+  sentimentKey = comprehend.detect_sentiment(Text=data["Item"]["Feedback"]["S"], LanguageCode='en')
+  print(sentimentKey)
+  print(keyPhrase)
+  return {"message1" : keyPhrase,"sent" : sentimentKey}
+

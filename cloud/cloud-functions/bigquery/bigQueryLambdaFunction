@@ -1,0 +1,49 @@
+from google.cloud import bigquery
+
+def hello_world(self):
+  client = bigquery.Client()
+  print(client);
+  dataset = bigquery.Dataset('group11-369414.TestRecipe_DataSet')
+  print(dataset);
+  dataset.location = "US"
+  dataset = client.create_dataset(dataset, timeout=30)  # Make an API request.
+  print("Created dataset {}.{}".format(client.project, dataset.dataset_id))
+  schema = [
+    bigquery.SchemaField("string_field_0", "STRING"),
+    bigquery.SchemaField("string_field_1", "STRING")
+  ]
+  table_id="group11-369414.TestRecipe_DataSet.TestRecipe_Table"
+  table = bigquery.Table(table_id, schema=schema)
+  table = client.create_table(table)  # Make an API request.
+  print("Created table {}.{}.{}".format(table.project, table.dataset_id, table.table_id))
+
+  job_config = bigquery.LoadJobConfig(
+    schema=[
+        bigquery.SchemaField("string_field_0", "STRING"),
+        bigquery.SchemaField("string_field_1", "STRING"),
+    ],
+  )
+
+  uri = "gs://check_test_data/TestRecipe.csv"
+
+  load_job = client.load_table_from_uri(
+    uri,table_id, job_config=job_config
+  )  # Make an API request.
+
+  load_job.result()
+
+  destination_table = client.get_table(table_id)
+  print("Loaded {} rows.".format(destination_table.num_rows))
+  
+  query = """SELECT * FROM ML.EVALUATE(MODEL `TrainRecipe_DataSet.TrainRecipeModel`, (SELECT *  FROM `TestRecipe_DataSet.TestRecipe_Table`)) """
+  query_job = client.query(query)  # Make an API request.
+  print("The query data1: ", query_job)
+
+  print("The query data:")
+  for row in query_job:
+    # Row values can be accessed by field name or index.
+    print("name={}, count={}", row)
+  return load_job
+
+  #https://www.programcreek.com/python/example/115626/google.cloud.bigquery.LoadJobConfig
+

@@ -1,0 +1,37 @@
+const { Storage } = require('@google-cloud/storage');
+const express = require('express');
+const cors = require('cors');
+console.log("Inside cloud function")
+const storage_client = new Storage();
+const app = express();
+app.use(express.json());
+const corsOpts = {
+    origin: '*',
+  
+    methods: [
+      'GET',
+      'POST',
+    ],
+  
+    allowedHeaders: [
+        'Content-Type', 'Authorization', 'Accept'
+    ],
+  };
+  
+app.use(cors(corsOpts))
+console.log("Inside cloud function and cors code passed")
+app.post("/", async (req, res) => {
+  console.log("Inside post funciton",req.body)
+  await storage_client.bucket("feedback_bucket_gcp").file("feedback.csv").save(req.body.data);
+  console.log("Trying to send now")
+  res.send({
+        res:res.data,
+      status: 200,
+      message: "success"
+      
+    });console.log("succes")
+})
+
+
+module.exports = { app }
+
